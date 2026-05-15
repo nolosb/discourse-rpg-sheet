@@ -1,0 +1,18 @@
+{
+  "provider": {
+    "name": "my_provider",
+    "type": "openai_compatible",
+    "base_url": "https://your-inference-server/v1",
+    "model": "your-model-name",
+    "context_window": 200000,
+    "max_output_tokens": 50000,
+    "api_key_env": "LLM_API_KEY",
+    "api_key_op": "op://Vault/Item/credential",
+    "op_account": "your.1password.com"
+  },
+  "discourse": {
+    "default_site": "https://your-discourse-site.com",
+    "mcp_package": "@discourse/mcp@latest",
+    "op_account": "your.1password.com"
+  }
+}

@@ -1,0 +1,625 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# discourse-rpg-sheet: term-llm + Discourse MCP RPG character sheet generator.
+#
+# All provider and credential configuration is loaded from a config file.
+# Runtime secrets are passed through a random XDG_CONFIG_HOME under /tmp
+# and removed when the script exits.
+
+require "base64"
+require "fileutils"
+require "json"
+require "open3"
+require "optparse"
+require "pty"
+require "securerandom"
+require "shellwords"
+require "time"
+require "tmpdir"
+
+PROMPT_TEXT = <<~PROMPT
+  You are generating an RPG-style character sheet from Discourse forum activity.
+
+  You have the Discourse MCP server available. Use it. Do not fetch Discourse data
+  by inventing URLs. Do not rely on memory. Do not invent quotes.
+
+  Follow these phases IN ORDER. This is intentionally interactive and should stay
+  close to the original Claude plugin workflow.
+
+  ## Phase 1: Data Gathering
+
+  Use the Discourse MCP tools/resources for the selected site.
+
+  1. If needed, call `discourse_select_site`.
+  2. Call `discourse_get_user` for the target username.
+  3. Call `discourse_list_user_posts` for the target username. IMPORTANT:
+     `has_more: false` can be wrong on some Discourse activity APIs, so continue
+     paging until you receive an empty `posts` array or have gathered about 300
+     post metadata rows for the requested timeframe. Do not stop at 15. Fifteen
+     is only the old detailed-read target, not the corpus size.
+  4. Read about 30 substantive posts with `discourse_read_post` after you have the
+     larger metadata corpus. Pick a diverse sample across dates/topics, plus high-signal excerpts.
+
+  Summarize what you gathered before proceeding: total post metadata rows gathered,
+  detailed posts read, date range, main categories/topics, and notable posts. In
+  later output, distinguish "posts gathered" from "detailed posts read". Do not
+  report "Posts analyzed: 15" if you gathered hundreds and only read 15 in full.
+
+  ## Phase 2: Analysis
+
+  Analyze the gathered data through these lenses, using concrete examples:
+
+  - Output patterns: volume, consistency, categories
+  - Signature moves: recurring rhetorical/strategic patterns
+  - Strongest contributions: 5-7 posts with impact or clear substance
+  - Gaps and limitations
+  - Collaboration style
+  - Evolution over the period
+  - The deeper question: what this person is trying to do beyond surface tasks
+
+  Present a concise analysis summary to the user before proceeding.
+
+  ## Phase 3: Collaborative Trait Mapping — INTERACTIVE
+
+  Use the `ask_user` tool. Do not skip this. Do not merely print questions in text.
+  You MUST receive at least one `ask_user` response before Phase 4. If you have
+  not successfully called `ask_user`, you are forbidden from writing output files.
+  Ask focused multiple-choice questions with an `Other` option available via the
+  tool. After each answer, incorporate the user's choice and continue.
+
+  Keep the interaction compact. Ask 3-5 questions total by grouping choices.
+
+  ### 3a. Character Identity
+
+  Propose 2-3 options each for:
+
+  - Name
+  - Family: where they come from / how they are positioned, e.g. Borderlander, Guildmaster, Wayfinder, Sentinel, Chronicler
+  - Trade: craft/building mode, e.g. Artificer, Architect, Forgehand, Scribe, Cartographer
+  - Temper: influence style, e.g. Field Bard, Truthsayer, Tactician, Hearthkeeper, Signalfire
+
+  Use `ask_user` to let the user pick/remix. Also propose Level 1-20 and Alignment.
+
+  ### 3b. Stats
+
+  Propose six stats on a 1-20 scale, with one-line justification:
+
+  - STR: raw output / delivery volume
+  - DEX: versatility / context switching
+  - CON: endurance / sustained load over time
+  - INT: systems thinking / pattern recognition
+  - WIS: judgment / knowing when and where to act
+  - CHA: influence / ability to shift others' thinking
+
+  Use `ask_user` to ask whether to accept, boost influence/CHA, boost systems/INT,
+  boost delivery/STR-CON, or rebalance manually.
+
+  ### 3c. Abilities
+
+  Propose 1 passive and 3-5 active abilities based on the signature patterns found.
+  Each ability needs:
+
+  - Name: evocative, 1-2 words
+  - Type: Passive or Active
+  - For active: Range, Cooldown, Cost
+  - Description: what it does, when it works, when it fails
+  - Evidence quote: real quote from posts
+
+  Use `ask_user` to let the user accept or choose a tonal direction.
+
+  ### 3d. Debuffs
+
+  Propose 2-4 debuffs based on gaps. Each needs:
+
+  - Name
+  - Type: persistent, removable, or environmental
+  - Effect
+  - Description
+
+  Use `ask_user` to let the user accept/soften/sharpen.
+
+  ### 3e. Inventory, Quests, Party
+
+  Propose:
+
+  - Equipped items (3)
+  - Pack items (4-6)
+  - Active quest (1)
+  - Side quests (2-4)
+  - Completed quests (2-3)
+  - Allies (4-6) if visible from data; otherwise be honest
+  - Relationship style
+  - Party role
+
+  Use `ask_user` once for final approval before generating files.
+
+  ### 3f. Origin Story
+
+  Write a 3-4 sentence origin story in third person, past tense, slightly mythic
+  tone. It should cover arrival, early work, noticing something deeper, and
+  current state.
+
+  ## Rate limits
+
+  If the Discourse MCP server reports rate limiting or asks you to wait, use the
+  shell tool to run `sleep N` for the requested delay, then continue. Only use
+  shell for sleeping; do not run arbitrary commands.
+
+  ## Phase 4: Generate Output
+
+  After user approval through `ask_user`, write exactly two files using the `write_file` tool:
+
+  - `{username}-character-sheet.md`
+  - `{username}-character-sheet.html`
+
+  Do not merely print the files in chat. Actually write them to the requested
+  output directory. After writing, give a short summary of the files written.
+
+  The HTML must be complete and self-contained: inline CSS and JS, no build step.
+  It may reference a portrait image named `{username}-character-portrait.png` in
+  the same directory, but it must render gracefully if the image is missing.
+
+  Markdown structure:
+
+  ```markdown
+  # Character Sheet
+
+  **Name:** ...
+  **Family:** ... — ...
+  **Trade:** ... — ...
+  **Temper:** ... — ...
+
+  **Level:** ...
+  **Alignment:** ...
+
+  ---
+
+  ## Evidence Summary
+
+  - Posts gathered: ...
+  - Detailed posts read: ...
+  - Date range: ...
+  - Main categories/topics: ...
+  - Caveats: ...
+
+  ---
+
+  ## STATS (1–20 scale)
+
+  - **STR 14** `██████████████░░░░░░` — ...
+
+  ---
+
+  ## PASSIVE ABILITY
+  ...
+
+  ## ACTIVE ABILITIES
+  ...
+
+  ## DEBUFFS
+  ...
+
+  ## INVENTORY
+  ...
+
+  ## QUEST LOG
+  ...
+
+  ## PARTY DYNAMICS
+  ...
+
+  ## ORIGIN STORY
+  ...
+  ```
+
+  HTML requirements:
+
+  Make a tasteful RPG character page with tabs or sections for Overview,
+  Abilities, Debuffs, Inventory, Quests, and Party. Use readable typography,
+  dark fantasy-ish colors, mobile-friendly layout, and small inline JavaScript
+  only if needed for tabs. Escape user/post content safely in the generated HTML.
+PROMPT
+
+CONFIG_SEARCH_PATHS = [
+  File.join(Dir.pwd, "config.json"),
+  File.join(Dir.pwd, ".discourse-rpg-sheet.json"),
+  File.join(Dir.home, ".config", "discourse-rpg-sheet", "config.json"),
+].freeze
+
+EXAMPLE_CONFIG = <<~JSON
+  {
+    "provider": {
+      "name": "my_provider",
+      "type": "openai_compatible",
+      "base_url": "https://your-inference-server/v1",
+      "model": "your-model-name",
+      "context_window": 200000,
+      "max_output_tokens": 50000,
+      "api_key_env": "LLM_API_KEY",
+      "api_key_op": "op://Vault/Item/credential",
+      "op_account": "your.1password.com"
+    },
+    "discourse": {
+      "default_site": "https://your-discourse-site.com",
+      "mcp_package": "@discourse/mcp@latest",
+      "op_account": "your.1password.com"
+    }
+  }
+JSON
+
+def find_config(explicit_path)
+  if explicit_path
+    abort "Config file not found: #{explicit_path}" unless File.exist?(explicit_path)
+    return explicit_path
+  end
+  CONFIG_SEARCH_PATHS.find { |p| File.exist?(p) }
+end
+
+def load_config(path)
+  return {} unless path
+  JSON.parse(File.read(path))
+rescue JSON::ParserError => e
+  abort "Invalid JSON in config file #{path}: #{e.message}"
+end
+
+options = {
+  output_dir: Dir.pwd,
+  timeframe: "last 6 months",
+  config_path: nil,
+  term_llm: ENV.fetch("TERM_LLM", "term-llm"),
+  max_turns: 220,
+  target_posts: 500,
+  detailed_posts: 30,
+  interactive: true,
+  generate_user_api_key: true,
+  auto_generate_user_api_key: true,
+  mcp_scopes: "read",
+  mcp_app_name: "Discourse RPG Sheet",
+  mcp_client_id: "discourse-rpg-sheet",
+  model_args: [],
+  keep_temp: false,
+}
+
+parser = OptionParser.new do |o|
+  o.banner = "Usage: discourse-rpg-sheet USERNAME [SITE_URL] [TIMEFRAME] [options]"
+  o.separator ""
+  o.separator "Config: reads ./config.json or pass --config PATH"
+  o.separator ""
+  o.separator "Generation:"
+  o.on("-c", "--config PATH", "Path to config file") { |v| options[:config_path] = v }
+  o.on("-o", "--output DIR", "Output directory (default: current directory)") { |v| options[:output_dir] = v }
+  o.on("--timeout DURATION", "term-llm timeout, e.g. 20m") { |v| options[:model_args] += ["--timeout", v] }
+  o.on("--max-turns N", Integer, "term-llm max agent/tool turns (default: 220)") { |v| options[:max_turns] = v }
+  o.on("--target-posts N", Integer, "Target post metadata rows to gather (default: 500)") { |v| options[:target_posts] = v }
+  o.on("--detailed-posts N", Integer, "Substantive posts to read in full (default: 30)") { |v| options[:detailed_posts] = v }
+  o.on("--batch", "Non-interactive: model decides all trait choices") { options[:interactive] = false }
+  o.on("--interactive", "Interactive mode with ask_user (default)") { options[:interactive] = true }
+  o.on("--max-output-tokens N", Integer, "term-llm max output tokens") { |v| options[:max_output_tokens] = v }
+  o.on("--keep-temp", "Keep temp config directory for debugging (contains secrets)") { options[:keep_temp] = true }
+  o.separator ""
+  o.separator "Provider overrides (override config file values):"
+  o.on("--base-url URL", "OpenAI-compatible base URL") { |v| options[:base_url_override] = v }
+  o.on("--model MODEL", "Model name") { |v| options[:model_override] = v }
+  o.on("--api-key-env VAR", "Read API key from this environment variable") { |v| options[:api_key_env_override] = v }
+  o.on("--api-key-op REF", "Read API key from 1Password reference") { |v| options[:api_key_op_override] = v }
+  o.separator ""
+  o.separator "Discourse MCP auth:"
+  o.on("--mcp-package PKG", "npm package for MCP server (default: @discourse/mcp@latest)") { |v| options[:mcp_package_override] = v }
+  o.on("--mcp-profile-op REF", "Read MCP profile JSON from 1Password") { |v| options[:mcp_profile_op] = v; options[:generate_user_api_key] = false }
+  o.on("--no-user-api-key", "Public read-only MCP only, no user API key") { options[:mcp_profile_op] = nil; options[:store_mcp_profile_op] = nil; options[:generate_user_api_key] = false; options[:auto_generate_user_api_key] = false }
+  o.on("--mcp-user-api-key-op REF", "Read Discourse User API key from 1Password") { |v| options[:mcp_user_api_key_op] = v }
+  o.on("--mcp-user-api-client-id-op REF", "Read Discourse User API client id from 1Password") { |v| options[:mcp_user_api_client_id_op] = v }
+  o.on("--mcp-admin-api-key-op REF", "Read admin API key from 1Password") { |v| options[:mcp_admin_api_key_op] = v }
+  o.on("--mcp-admin-api-username USER", "Admin API username (default: system)") { |v| options[:mcp_admin_api_username] = v }
+  o.on("--generate-user-api-key", "Run user API key generator (default)") { options[:generate_user_api_key] = true }
+  o.on("--no-auto-generate-user-api-key", "Fail instead of launching generator if profile missing") { options[:auto_generate_user_api_key] = false }
+  o.on("--store-mcp-profile-op REF", "Store generated MCP profile in 1Password") { |v| options[:store_mcp_profile_op] = v }
+  o.on("--mcp-scopes SCOPES", "Scopes for generated user key (default: read)") { |v| options[:mcp_scopes] = v }
+  o.on("--mcp-application-name NAME", "Application name for generated user key") { |v| options[:mcp_app_name] = v }
+  o.on("--mcp-client-id ID", "Client id for generated user key") { |v| options[:mcp_client_id] = v }
+  o.separator ""
+  o.on("--example-config", "Print an example config file and exit") { puts EXAMPLE_CONFIG; exit }
+  o.on("-h", "--help", "Show help") { puts o; exit }
+end
+
+parser.parse!
+username = ARGV.shift
+abort parser.to_s unless username
+
+# Load config file
+config_file = find_config(options[:config_path])
+unless config_file
+  warn "No config file found. Create one at #{CONFIG_SEARCH_PATHS.first}"
+  warn "Run with --example-config to see the format."
+  abort
+end
+config = load_config(config_file)
+warn "Loaded config from #{config_file}" if ENV["DEBUG"]
+
+provider_cfg = config.fetch("provider", {})
+discourse_cfg = config.fetch("discourse", {})
+
+# Resolve provider settings: CLI overrides > config file
+provider_name = provider_cfg.fetch("name", "default")
+base_url = options[:base_url_override] || provider_cfg["base_url"]
+model = options[:model_override] || provider_cfg["model"]
+context_window = provider_cfg.fetch("context_window", 200_000)
+max_output_tokens = options[:max_output_tokens] || provider_cfg.fetch("max_output_tokens", 50_000)
+api_key_env = options[:api_key_env_override] || provider_cfg["api_key_env"]
+api_key_op = options[:api_key_op_override] || provider_cfg["api_key_op"]
+provider_op_account = provider_cfg["op_account"]
+api_key_var = "RPG_SHEET_API_KEY"
+
+abort "Config missing provider.base_url (or pass --base-url)" unless base_url
+abort "Config missing provider.model (or pass --model)" unless model
+abort "Config missing provider.api_key_env or provider.api_key_op (or pass --api-key-env/--api-key-op)" unless api_key_env || api_key_op
+
+# Resolve discourse settings: CLI overrides > config file
+site_url = ARGV.shift || discourse_cfg.fetch("default_site", nil)
+abort "No site URL provided. Pass as argument or set discourse.default_site in config." unless site_url
+site_url = site_url.sub(%r{/+$}, "")
+
+timeframe = ARGV.shift || options[:timeframe]
+mcp_package = options[:mcp_package_override] || discourse_cfg.fetch("mcp_package", "@discourse/mcp@latest")
+discourse_op_account = discourse_cfg["op_account"]
+
+slug = username.downcase.gsub(/[^a-z0-9_-]+/, "-").gsub(/^-|-$/, "")
+FileUtils.mkdir_p(options[:output_dir])
+
+class SecretError < StandardError; end
+
+def op_cmd(account)
+  account && !account.empty? ? ["op", "--account", account] : ["op"]
+end
+
+def read_op(ref, account = nil)
+  stdout, stderr, status = Open3.capture3(*op_cmd(account), "read", ref)
+  raise SecretError, "op read failed for #{ref}: #{stderr.strip}" unless status.success?
+  stdout.strip
+rescue Errno::ENOENT
+  raise SecretError, "1Password CLI `op` not found"
+end
+
+def read_secret(op_ref: nil, env_name: nil, label: "secret", account: nil)
+  if env_name && ENV[env_name] && !ENV[env_name].empty?
+    return ENV[env_name]
+  end
+  return read_op(op_ref, account) if op_ref
+  nil
+rescue SecretError => e
+  raise SecretError, "#{label}: #{e.message}"
+end
+
+def store_op(ref, value, account = nil)
+  unless ref.start_with?("op://")
+    raise ArgumentError, "1Password destination must be op://vault/item/field"
+  end
+  vault, item, field = ref.sub(%r{\Aop://}, "").split("/", 3)
+  raise ArgumentError, "1Password destination must be op://vault/item/field" unless vault && item && field
+
+  stored_value = if field == "notesPlain" || field.end_with?("_b64")
+    Base64.strict_encode64(value)
+  else
+    value
+  end
+  op_field = field.end_with?("_b64") ? "notesPlain" : field
+
+  stdout, stderr, status = Open3.capture3(*op_cmd(account), "item", "edit", item, "--vault=#{vault}", "#{op_field}=#{stored_value}")
+  return true if status.success?
+
+  _out, create_err, create_status = Open3.capture3(
+    *op_cmd(account), "item", "create",
+    "--category=secure-note",
+    "--vault=#{vault}",
+    "--title=#{item}",
+    "#{op_field}=#{stored_value}"
+  )
+  raise SecretError, "op item edit/create failed: #{stderr.strip} #{create_err.strip}" unless create_status.success?
+  true
+rescue Errno::ENOENT
+  raise SecretError, "1Password CLI `op` not found"
+end
+
+def write_config_yaml(path, provider_name:, base_url:, model:, context_window:, max_output_tokens:, api_key_var:)
+  File.write(path, <<~YAML)
+    default_provider: #{provider_name}
+    providers:
+      #{provider_name}:
+        type: openai_compatible
+        base_url: #{base_url}
+        api_key: ${#{api_key_var}}
+        model: #{model}
+        context_window: #{context_window}
+        max_output_tokens: #{max_output_tokens}
+  YAML
+end
+
+def decode_op_value(ref, value)
+  return Base64.decode64(value) if ref.end_with?("_b64") || ref.end_with?("/notesPlain")
+  value
+end
+
+def run_user_api_key_generator(site_url, options, mcp_package, profile_path, discourse_op_account)
+  cmd = [
+    "npx", "-y", mcp_package, "generate-user-api-key",
+    "--site", site_url,
+    "--scopes", options[:mcp_scopes],
+    "--application-name", options[:mcp_app_name],
+    "--client-id", options[:mcp_client_id],
+    "--save-to", profile_path
+  ]
+  warn "No reusable Discourse MCP profile found. Launching user API key generator for #{site_url}."
+  warn "Follow the URL it prints, approve, then paste the encrypted payload. This should only be needed once."
+  system(*cmd) || raise("user api key generator failed")
+  profile_json = File.read(profile_path)
+  store_op(options[:store_mcp_profile_op], profile_json, discourse_op_account) if options[:store_mcp_profile_op]
+  profile_path
+end
+
+def build_mcp_profile(site_url, options, mcp_package, profile_path, discourse_op_account)
+  if options[:generate_user_api_key]
+    return run_user_api_key_generator(site_url, options, mcp_package, profile_path, discourse_op_account)
+  end
+
+  if options[:mcp_profile_op]
+    begin
+      profile_json = decode_op_value(options[:mcp_profile_op], read_op(options[:mcp_profile_op], discourse_op_account))
+      File.write(profile_path, profile_json)
+      return profile_path
+    rescue SecretError => e
+      raise unless options[:auto_generate_user_api_key] && options[:store_mcp_profile_op]
+      warn "Could not read MCP profile from #{options[:mcp_profile_op]}: #{e.message}"
+      return run_user_api_key_generator(site_url, options, mcp_package, profile_path, discourse_op_account)
+    end
+  end
+
+  auth_pair = { "site" => site_url }
+
+  if options[:mcp_user_api_key_op]
+    auth_pair["user_api_key"] = read_op(options[:mcp_user_api_key_op], discourse_op_account)
+    if options[:mcp_user_api_client_id_op]
+      auth_pair["user_api_client_id"] = read_op(options[:mcp_user_api_client_id_op], discourse_op_account)
+    end
+  elsif options[:mcp_admin_api_key_op]
+    auth_pair["api_key"] = read_op(options[:mcp_admin_api_key_op], discourse_op_account)
+    auth_pair["api_username"] = options[:mcp_admin_api_username] || "system"
+  else
+    return nil
+  end
+
+  profile = {
+    "auth_pairs" => [auth_pair],
+    "read_only" => true,
+    "allow_writes" => false,
+    "site" => site_url,
+    "log_level" => "error",
+    "max_read_length" => 50_000,
+    "transport" => "stdio"
+  }
+  File.write(profile_path, JSON.pretty_generate(profile))
+  profile_path
+end
+
+def write_mcp_json(path, package_name:, site_url:, profile_path:)
+  args = ["-y", package_name]
+  if profile_path
+    args += ["--profile", profile_path]
+  else
+    args += ["--site", site_url, "--log_level", "error", "--max_read_length", "50000"]
+  end
+
+  cfg = {
+    "servers" => {
+      "discourse" => {
+        "command" => "npx",
+        "args" => args,
+        "env" => {}
+      }
+    }
+  }
+  File.write(path, JSON.pretty_generate(cfg))
+end
+
+# Resolve API key
+resolved_api_key = read_secret(
+  op_ref: api_key_op,
+  env_name: api_key_env,
+  label: "LLM API key",
+  account: provider_op_account
+)
+abort "Could not resolve API key. Check provider.api_key_env or provider.api_key_op in config." unless resolved_api_key && !resolved_api_key.empty?
+
+tmp_root = Dir.mktmpdir("rpg-sheet-")
+begin
+  xdg = File.join(tmp_root, "xdg")
+  term_cfg = File.join(xdg, "term-llm")
+  FileUtils.mkdir_p(term_cfg)
+
+  prompt_path = File.join(tmp_root, "character-sheet-prompt.md")
+  profile_path = File.join(tmp_root, "discourse-mcp-profile.json")
+  File.write(prompt_path, PROMPT_TEXT)
+
+  write_config_yaml(
+    File.join(term_cfg, "config.yaml"),
+    provider_name: provider_name,
+    base_url: base_url,
+    model: model,
+    context_window: context_window,
+    max_output_tokens: max_output_tokens,
+    api_key_var: api_key_var
+  )
+
+  effective_profile_path = build_mcp_profile(site_url, options, mcp_package, profile_path, discourse_op_account)
+  write_mcp_json(
+    File.join(term_cfg, "mcp.json"),
+    package_name: mcp_package,
+    site_url: site_url,
+    profile_path: effective_profile_path
+  )
+
+  question = <<~QUESTION
+    Generate a Discourse RPG character sheet for username #{username.inspect} on site #{site_url.inspect}.
+
+    Timeframe: #{timeframe.inspect}.
+
+    Target corpus size: gather about #{options[:target_posts]} user post metadata rows before analysis, unless the user has fewer posts in the timeframe. Do not exceed this target; #{options[:target_posts]} is the cap.
+    Detailed reads: after gathering the larger corpus, read about #{options[:detailed_posts]} substantive posts in full. Use metadata/excerpts for broad distribution, but use full post reads for claims about style, abilities, quotes, and impact.
+    Interactive requirement: before writing files, you must call ask_user and receive at least one user response. Do not write files if no ask_user call has completed.
+
+    Use the configured Discourse MCP server named `discourse`. If the MCP server is not already tethered to the site, call `discourse_select_site` first.
+    Use `discourse_get_user`, `discourse_list_user_posts`, and `discourse_read_post` as described in the attached instructions.
+
+    Output directory: #{File.expand_path(options[:output_dir]).inspect}
+    Markdown file to write: #{File.expand_path(File.join(options[:output_dir], "#{slug}-character-sheet.md")).inspect}
+    HTML file to write: #{File.expand_path(File.join(options[:output_dir], "#{slug}-character-sheet.html")).inspect}
+
+    If you hit a Discourse MCP rate limit, use the shell tool to run `sleep N` for the requested wait time, then continue.
+
+    Interaction mode: #{options[:interactive] ? "interactive. Use ask_user for Phase 3 collaborative trait mapping." : "batch. Do not use ask_user; make the trait choices yourself and proceed to output."}
+  QUESTION
+
+  cmd = [
+    options[:term_llm], "ask",
+    "--text",
+    "--no-session",
+    "--yolo",
+    "--mcp", "discourse",
+    "--tools", (options[:interactive] ? "ask_user,write_file,shell" : "write_file,shell"),
+    "--write-dir", File.expand_path(options[:output_dir]),
+    "--shell-allow", "sleep*",
+    "--provider", provider_name,
+    "--max-turns", options[:max_turns].to_s,
+    "--max-output-tokens", max_output_tokens.to_s,
+    *options[:model_args],
+    "-f", prompt_path,
+    question
+  ]
+
+  env = {
+    "XDG_CONFIG_HOME" => xdg,
+    api_key_var => resolved_api_key
+  }
+
+  warn "+ XDG_CONFIG_HOME=#{xdg.shellescape} #{api_key_var}=<redacted> #{cmd.shelljoin}" if ENV["DEBUG"]
+  ok = system(env, *cmd)
+  unless ok
+    abort "term-llm failed#{options[:keep_temp] ? " (temp kept at #{tmp_root})" : ""}"
+  end
+
+  md_path = File.join(options[:output_dir], "#{slug}-character-sheet.md")
+  html_path = File.join(options[:output_dir], "#{slug}-character-sheet.html")
+
+  unless File.exist?(md_path) && File.exist?(html_path)
+    abort "term-llm completed but expected files were not written: #{md_path}, #{html_path}#{options[:keep_temp] ? " (temp kept at #{tmp_root})" : ""}"
+  end
+
+  puts "Wrote #{md_path}"
+  puts "Wrote #{html_path}"
+ensure
+  if options[:keep_temp]
+    warn "Kept temp dir: #{tmp_root} (may contain secrets)"
+  else
+    FileUtils.remove_entry(tmp_root) if tmp_root && Dir.exist?(tmp_root)
+  end
+end

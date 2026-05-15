@@ -1,7 +1,13 @@
 config.json
 .discourse-rpg-sheet.json
+
+# Generated per-user output
 *-analysis.md
-*-character-sheet.md
-*-character-sheet.json
-*-character-sheet.html
-*-character-portrait.png
+*-character-sheet*.md
+*-character-sheet*.json
+*-character-sheet*.html
+*-character-portrait*.png
+
+# Intermediate/local state
+reroll-mode.txt
+reroll-status.md

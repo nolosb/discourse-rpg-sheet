@@ -224,6 +224,13 @@ through these lenses, using concrete examples:
 - Strongest contributions: 5-7 posts with impact or clear substance
 - Gaps and limitations
 - Collaboration style
+- **Top collaborators**: as you read posts and topics, keep a tally of every
+  username that appears in replies to/from this person or in the same topics.
+  These are REAL usernames from the Discourse data — names like "sam",
+  "codinghorror", "pmusaraj", etc. After analysis, list the 6 most frequent
+  with a count and example interaction. If you cannot find 6 real usernames
+  in the data, list however many you found. NEVER invent a username. If a
+  name is not verbatim from the post data, do not include it.
 - Evolution over the period
 - The deeper question: what this person is trying to do beyond surface tasks
 
@@ -232,9 +239,10 @@ Present a concise analysis summary to the user before proceeding.
 After completing the analysis, write the full analysis to
 `{username}-analysis.md` using `write_file`. This file is used for re-rolls
 so include everything: post metadata summary, detailed post excerpts and quotes,
-collaboration patterns, signature moves, strongest contributions, gaps,
-evolution, and the deeper question. Be thorough. This file replaces the entire
-data gathering phase on a re-roll.
+collaboration patterns, the top collaborator tally with real usernames and
+counts, signature moves, strongest contributions, gaps, evolution, and the
+deeper question. Be thorough. This file replaces the entire data gathering
+phase on a re-roll.
 
 ---
 
@@ -252,6 +260,11 @@ From this point forward, you are the Game Master. The Analyst's dossier is your
 source material, but your voice is pure fantasy RPG. Translate every workplace
 pattern into game mechanics. If a description could appear in a performance
 review, rewrite it until it could appear in a Monster Manual.
+
+NEVER use the person's real name or username in ability, debuff, item, or quest
+descriptions. Write in third person generic: "the caster", "the wielder",
+"this ability", or just describe the effect directly. These are sourcebook
+entries, not character references.
 
 Use the `ask_user` tool. Do not skip this. Do not merely print questions in text.
 You MUST receive at least one `ask_user` response before Phase 4. If you have
@@ -302,12 +315,14 @@ Do NOT ask for feedback on these. Decide them yourself based on the data:
 
 Decide these yourself based on the data. Do NOT ask for user feedback on these.
 
-**Abilities** — **1 passive ability** and **3-5 active abilities** based on
+**Abilities** — **1 passive ability** and **3-4 active abilities** based on
 signature patterns. Each ability needs:
   - Name: 1-2 evocative words. NOT workplace language.
   - Type: Passive or Active
   - For active: Range (Melee/Ranged/Ritual/Utility/Bardic), Cooldown
-    (None/Medium/Long/Days), Cost
+    (None/Medium/Long/Days), Cost — pick from: 1 post, 1 reply, a thread,
+    attention, time from delivery, reputation stake, composure, political
+    capital, focus. Vary what you use. Not fantasy currencies.
   - Description: 2-3 sentences. What it does, when it works, when it fails.
     Use RPG framing.
   - Evidence quote: a real quote from their posts that demonstrates the ability.
@@ -332,15 +347,21 @@ signature patterns. Each ability needs:
 - **Completed quests** (2-3): Things they have shipped
 
 **Party:**
-- **Allies** (4-6): People they collaborate with and how
-- **Relationship style**: One sentence
-- **Party role**: One sentence, using RPG party language ("the tank", "the scout",
-  "the one who reads the map")
+- **Allies** (exactly 6): Use ONLY real Discourse usernames from the top
+  collaborators identified in the analysis. Do NOT invent usernames. If you
+  cannot find 6 real collaborators, use fewer. Describe each ally's role in
+  RPG party terms based on how they actually interact in the post data.
+- **Relationship style**: 2-3 sentences describing how they build and maintain
+  working relationships, in RPG terms.
+- **Party role**: 2-3 sentences, using RPG party language ("the tank", "the scout",
+  "the one who reads the map"). Explain what happens when they are in the party
+  and what is missing when they are not.
 
-**Origin story**: 3-4 sentences, third person, past tense, slightly mythic tone.
-Use language like "arrived at the territories", "the guild noticed", "started
-telling stories about what was seen at the seams". Covers: arrival, early work,
-the moment of noticing something deeper, and current state.
+**Origin story**: EXACTLY 3 sentences. Not 4, not 5, not a paragraph. Three.
+Third person, past tense, slightly mythic tone. Sentence 1: arrival. Sentence 2:
+what they built or discovered. Sentence 3: where they stand now. Use language
+like "arrived at the territories", "the guild noticed". If your origin story
+is longer than 3 sentences, delete until it fits.
 
 ### Round 2: Review (only in review mode)
 
@@ -479,10 +500,10 @@ wrench, fire, feather, chess-rook, landmark
     "allies": [
       { "name": "Name", "role": "How they collaborate" }
     ],
-    "relationship_style": "One sentence",
-    "party_role": "One sentence using RPG party language"
+    "relationship_style": "2-3 sentences",
+    "party_role": "2-3 sentences using RPG party language"
   },
-  "origin_story": "3-4 sentences, third person, mythic tone",
+  "origin_story": "Exactly 3 sentences, third person, mythic tone",
   "site_url": "https://the-site-url.com",
   "date_range": "Nov 2025 - May 2026",
   "post_count": 250,
@@ -502,12 +523,50 @@ After generating both files, tell the user:
    directory
 
 Then output a portrait generation prompt the user can paste into an image
-generator. The prompt should describe:
-- A pixel art portrait in Might and Magic III / early 90s RPG style
-- The character's class fantasy (family, trade, temper) translated into visual cues
-- Key personality traits as visual details (e.g., a cautious character has guarded
-  posture, a builder has tools)
-- 240x240px, dark background, warm palette matching the character sheet colors
-- Head and shoulders framing, facing slightly left
+generator. Follow this structure exactly:
 
-Keep the prompt to 2-3 sentences. Evocative, not over-specified.
+```
+Pixel art character portrait in the style of Heroes of Might and Magic III.
+Bust portrait, shoulders and head, facing slightly left. Rich warm lighting
+from below-left, strong highlights on face and shoulders, deep shadows.
+High contrast, painterly pixel art — NOT flat or cartoony.
+
+[2-3 sentences: age, build, facial features. Be specific: jaw shape, brow,
+hair length and texture, eye color, facial hair. Expression should reflect
+their temper and be described precisely — "a knowing half-smile", "brow
+slightly furrowed in concentration", "eyes tracking something beyond the
+frame". Faces make or break portraits, so describe them richly.]
+
+[3-4 sentences: clothing and accessories with MATERIAL DETAIL. Not just
+"leather vest" but "a well-worn leather vest with brass buckles, stitching
+visible at the seams". Layer the outfit: base garment, over-layer, belt or
+strap, and 2-3 specific small items in pouches or on the person that tell
+the story of their trade. A folded blueprint, a set of calipers, a wooden
+tuning fork on a cord, a vial of ink. Every item should be something you
+could pick up and hold. One signature accessory should catch the light —
+a brass clasp, a polished lens, a gold-threaded patch.]
+
+[2-3 sentences: background as a SPLIT SCENE or dramatic environment. The
+best portraits use the background to tell a story. A split background
+works well: one side showing one domain, the other side showing another
+(a stone tower and a workshop, a library and a forge, a market and a
+wilderness). Use warm light sources — forge glow, candlelight, sunset
+through a window. The background should have depth and detail, not just
+a flat color or blurred suggestion.]
+
+Color palette: warm earth tones, rich leather browns, dusty gold and brass
+accents, deep teal or dark amber background tones. Strong warm-cool contrast
+between light sources and shadows. Limited palette, 16-32 colors max.
+Visible pixels but with sophisticated dithering for smooth gradients on
+skin and metal. 128x128 resolution scaled up. Thin black border frame.
+
+Style reference: the advisor portraits from Heroes of Might and Magic III,
+or the character selection portraits from Might and Magic VI. These have
+rich detail, dramatic lighting, and painterly quality despite the pixel
+grid — aim for that level of craft, not simple retro pixel art.
+```
+
+The first and last paragraphs are fixed. Only the middle three paragraphs
+change per character. Be generous with visual detail — richer prompts
+produce dramatically better portraits. Describe materials, light, and
+texture, not just shapes.

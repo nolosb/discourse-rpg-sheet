@@ -362,13 +362,15 @@ begin
     api_key_var: api_key_var
   )
 
-  effective_profile_path = build_mcp_profile(site_url, options, mcp_package, profile_path, discourse_op_account)
-  write_mcp_json(
-    File.join(term_cfg, "mcp.json"),
-    package_name: mcp_package,
-    site_url: site_url,
-    profile_path: effective_profile_path
-  )
+  unless options[:reroll]
+    effective_profile_path = build_mcp_profile(site_url, options, mcp_package, profile_path, discourse_op_account)
+    write_mcp_json(
+      File.join(term_cfg, "mcp.json"),
+      package_name: mcp_package,
+      site_url: site_url,
+      profile_path: effective_profile_path
+    )
+  end
 
   question = <<~QUESTION
     Generate a Discourse RPG character sheet for username #{username.inspect} on site #{site_url.inspect}.
@@ -399,7 +401,7 @@ begin
     "--text",
     "--no-session",
     "--yolo",
-    "--mcp", "discourse",
+    *(options[:reroll] ? [] : ["--mcp", "discourse"]),
     "--tools", (options[:interactive] ? "ask_user,write_file,shell" : "write_file,shell"),
     "--write-dir", File.expand_path(options[:output_dir]),
     "--shell-allow", "sleep*",

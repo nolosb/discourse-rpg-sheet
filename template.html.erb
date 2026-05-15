@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= h(data["name"]) %></title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a2e;
+    color: #e0d5c1;
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 17px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .page {
+    max-width: 920px;
+    width: 100%;
+  }
+
+  .header {
+    display: flex;
+    gap: 28px;
+    padding: 28px;
+    background: #16213e;
+    border: 2px solid #534320;
+    margin-bottom: 2px;
+  }
+
+  .portrait {
+    width: 240px;
+    height: 240px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 4px solid #534320;
+    outline: 2px solid #1a1a2e;
+    box-shadow: 0 0 0 3px #2a2015;
+  }
+
+  .portrait img {
+    width: 116%;
+    height: 116%;
+    margin: -8% 0 0 -8%;
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .identity {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .name {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 26px;
+    color: #d4a853;
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    background: #534320;
+    color: #e0d5c1;
+    padding: 5px 12px;
+    font-family: 'Crimson Text', serif;
+    font-size: 16px;
+    border: 1px solid #6b5a30;
+  }
+
+  .tag-label {
+    color: #8a7a5a;
+    margin-right: 4px;
+    font-style: italic;
+  }
+
+  .level-alignment {
+    font-size: 16px;
+    color: #8a7a5a;
+    font-style: italic;
+    letter-spacing: 0.5px;
+  }
+
+  .tabs {
+    display: flex;
+    background: #0f1a30;
+    border-left: 2px solid #534320;
+    border-right: 2px solid #534320;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 11px 8px;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    color: #6b5a30;
+    background: #0f1a30;
+    border: none;
+    border-bottom: 2px solid #534320;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab:hover {
+    color: #d4a853;
+    background: #16213e;
+  }
+
+  .tab.active {
+    color: #d4a853;
+    background: #16213e;
+    border-bottom: 2px solid #d4a853;
+  }
+
+  .panel {
+    display: none;
+    background: #16213e;
+    border: 2px solid #534320;
+    border-top: none;
+    padding: 28px;
+    min-height: 400px;
+  }
+
+  .panel.active { display: block; }
+
+  .panel h2 {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #d4a853;
+    margin: 28px 0 14px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #2a2a4a;
+    text-transform: uppercase;
+  }
+
+  .panel h2:first-child { margin-top: 0; }
+
+  .panel p, .panel li {
+    line-height: 1.7;
+    margin-bottom: 8px;
+  }
+
+  .panel ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .panel ul li::before {
+    content: '\f0da  ';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: #d4a853;
+    font-size: 12px;
+  }
+
+  .overview-columns {
+    display: flex;
+    gap: 32px;
+  }
+
+  .overview-left { flex: 1; }
+  .overview-right { flex: 1; }
+
+  .origin-intro {
+    background: #0f1a30;
+    border: 1px solid #2a2a4a;
+    padding: 20px;
+    line-height: 1.8;
+    color: #b0a890;
+    font-style: italic;
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .class-detail {
+    background: #0f1a30;
+    border: 1px solid #2a2a4a;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+  }
+
+  .class-detail-label {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: #d4a853;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .class-detail-name {
+    color: #e0d5c1;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .class-detail-desc {
+    color: #8a7a5a;
+    font-size: 16px;
+    font-style: italic;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .stat-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    gap: 10px;
+  }
+
+  .stat-name {
+    width: 36px;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: #d4a853;
+    letter-spacing: 1px;
+  }
+
+  .stat-value {
+    width: 24px;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #e0d5c1;
+  }
+
+  .stat-bar-bg {
+    flex: 1;
+    height: 14px;
+    background: #0f1a30;
+    border: 1px solid #2a2a4a;
+  }
+
+  .stat-bar {
+    height: 100%;
+    transition: width 0.5s;
+  }
+
+  .stat-desc {
+    font-size: 15px;
+    color: #c8a960;
+    padding-left: 70px;
+    margin-top: -2px;
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  .stat-row-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .str .stat-bar { background: #a84040; }
+  .dex .stat-bar { background: #40a848; }
+  .con .stat-bar { background: #c89040; }
+  .int .stat-bar { background: #4068c8; }
+  .wis .stat-bar { background: #8848b8; }
+  .cha .stat-bar { background: #c85888; }
+
+  .ability {
+    background: #0f1a30;
+    border: 1px solid #2a2a4a;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+
+  .ability-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .ability-name {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #d4a853;
+    letter-spacing: 0.5px;
+  }
+
+  .ability-meta {
+    font-size: 16px;
+    color: #c8a960;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+
+  .ability-desc { line-height: 1.7; }
+
+  .passive-badge {
+    display: inline-block;
+    background: #2a4a2a;
+    color: #60c060;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    margin-left: 10px;
+    border: 1px solid #3a6a3a;
+    text-transform: uppercase;
+  }
+
+  .debuff {
+    background: #2a1515;
+    border: 1px solid #5a2020;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+
+  .debuff .ability-name { color: #c85050; }
+
+  .debuff-type {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    margin-left: 10px;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+
+  .debuff-persistent {
+    background: #3a1515;
+    color: #c87070;
+    border-color: #5a2020;
+  }
+
+  .debuff-removable {
+    background: #2a2a15;
+    color: #c8c070;
+    border-color: #5a5a20;
+  }
+
+  .debuff-environmental {
+    background: #15202a;
+    color: #7090c8;
+    border-color: #204060;
+  }
+
+  .item {
+    background: #0f1a30;
+    border: 1px solid #2a2a4a;
+    padding: 14px 18px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 14px;
+  }
+
+  .item-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 30px;
+    text-align: center;
+    color: #d4a853;
+  }
+
+  .item-name {
+    color: #d4a853;
+    font-weight: 600;
+  }
+
+  .item-tag {
+    font-size: 16px;
+    color: #c8a960;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+
+  .item-desc {
+    font-size: 15px;
+    color: #b0a890;
+    margin-top: 4px;
+    line-height: 1.6;
+  }
+
+  .quest {
+    background: #0f1a30;
+    border: 1px solid #2a2a4a;
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+
+  .quest-title {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #d4a853;
+    margin-bottom: 8px;
+  }
+
+  .quest-desc {
+    font-size: 15px;
+    color: #c8b890;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .quest-step { padding: 4px 0; }
+  .quest-step.done { color: #6b5a30; text-decoration: line-through; }
+  .quest-step.done::before { content: '[x] '; color: #40a848; font-family: monospace; }
+  .quest-step.pending::before { content: '[ ] '; color: #6b5a30; font-family: monospace; }
+
+  .quest-side { border-color: #2a2a4a; }
+  .quest-complete {
+    border-color: #2a4a2a;
+    background: #0f1a20;
+  }
+  .quest-complete .quest-title { color: #60a060; }
+
+  .quest-label {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    margin-left: 10px;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+
+  .label-active { background: #2a2a15; color: #c8c070; border-color: #5a5a20; }
+  .label-side { background: #15202a; color: #7090c8; border-color: #204060; }
+  .label-complete { background: #152a15; color: #60a060; border-color: #205a20; }
+
+  .ally {
+    display: flex;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid #1a1a3e;
+  }
+
+  .ally:last-child { border-bottom: none; }
+
+  .ally-name {
+    color: #d4a853;
+    font-weight: 600;
+    width: 100px;
+    flex-shrink: 0;
+  }
+
+  .ally-role {
+    color: #b0a890;
+    line-height: 1.5;
+  }
+
+  .page-footer {
+    max-width: 920px;
+    width: 100%;
+    margin: 16px auto 0;
+    text-align: center;
+    font-size: 14px;
+    color: #4a4a5a;
+    letter-spacing: 0.3px;
+  }
+
+  .quote {
+    border-left: 3px solid #534320;
+    padding: 10px 18px;
+    margin: 10px 0;
+    color: #b0a890;
+    font-style: italic;
+    background: #0f1520;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="portrait">
+      <img src="<%= h(data["username"]) %>-character-portrait.png" alt="<%= h(data["name"]) %>">
+    </div>
+    <div class="identity">
+      <div class="name"><%= h(data["name"]) %></div>
+      <div class="tags">
+        <span class="tag"><span class="tag-label">Family:</span> <%= h(data["family"]["name"]) %></span>
+        <span class="tag"><span class="tag-label">Trade:</span> <%= h(data["trade"]["name"]) %></span>
+        <span class="tag"><span class="tag-label">Temper:</span> <%= h(data["temper"]["name"]) %></span>
+      </div>
+      <div class="level-alignment">Level <%= data["level"] %> &middot; <%= h(data["alignment"]) %></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')">OVERVIEW</button>
+    <button class="tab" onclick="showTab('abilities')">ABILITIES</button>
+    <button class="tab" onclick="showTab('debuffs')">DEBUFFS</button>
+    <button class="tab" onclick="showTab('inventory')">INVENTORY</button>
+    <button class="tab" onclick="showTab('quests')">QUESTS</button>
+    <button class="tab" onclick="showTab('party')">PARTY</button>
+  </div>
+
+  <div class="panel active" id="panel-overview">
+    <div class="overview-columns">
+      <div class="overview-left">
+        <h2>Class</h2>
+        <% ["family", "trade", "temper"].each do |cls| %>
+        <div class="class-detail">
+          <div class="class-detail-label"><%= cls.capitalize %></div>
+          <div class="class-detail-name"><%= h(data[cls]["name"]) %></div>
+          <div class="class-detail-desc"><%= h(data[cls]["description"]) %></div>
+        </div>
+        <% end %>
+      </div>
+
+      <div class="overview-right">
+        <h2>Stats</h2>
+        <% %w[str dex con int wis cha].each do |stat| %>
+        <% s = data["stats"][stat] %>
+        <div class="stat-row-wrap <%= stat %>">
+          <div class="stat-row" style="width:100%">
+            <span class="stat-name"><%= stat.upcase %></span>
+            <span class="stat-value"><%= s["value"] %></span>
+            <div class="stat-bar-bg"><div class="stat-bar" style="width:<%= s["value"].to_i * 5 %>%"></div></div>
+          </div>
+          <div class="stat-desc"><%= h(s["description"]) %></div>
+        </div>
+        <% end %>
+      </div>
+    </div>
+
+    <h2>Story</h2>
+    <div class="origin-intro">
+      <%= h(data["origin_story"]) %>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-abilities">
+    <% pa = data["passive_ability"] %>
+    <div class="ability">
+      <div class="ability-header">
+        <span class="ability-name"><%= h(pa["name"]) %> <span class="passive-badge">passive</span></span>
+      </div>
+      <div class="ability-desc"><%= h(pa["description"]) %></div>
+    </div>
+
+    <h2>Active Abilities</h2>
+    <% data["active_abilities"].each do |ab| %>
+    <div class="ability">
+      <div class="ability-header">
+        <span class="ability-name"><%= h(ab["name"]) %></span>
+        <span class="ability-meta"><%= h(ab["type"]) %> &middot; <%= h(ab["cooldown"]) %> &middot; Cost: <%= h(ab["cost"]) %></span>
+      </div>
+      <div class="ability-desc"><%= h(ab["description"]) %></div>
+      <% if ab["quote"] && !ab["quote"].empty? %>
+      <div class="quote">&ldquo;<%= h(ab["quote"]) %>&rdquo;</div>
+      <% end %>
+    </div>
+    <% end %>
+  </div>
+
+  <div class="panel" id="panel-debuffs">
+    <h2>Active Debuffs</h2>
+    <% data["debuffs"].each do |db| %>
+    <div class="debuff">
+      <div class="ability-header">
+        <span class="ability-name"><%= h(db["name"]) %></span>
+        <span class="debuff-type debuff-<%= db["type"] %>"><%= db["type"] %></span>
+      </div>
+      <div class="ability-desc"><strong>Effect:</strong> <%= h(db["effect"]) %><br><%= h(db["description"]) %></div>
+    </div>
+    <% end %>
+  </div>
+
+  <div class="panel" id="panel-inventory">
+    <h2>Equipped</h2>
+    <% data["inventory"]["equipped"].each do |item| %>
+    <div class="item">
+      <div class="item-icon"><i class="fa-solid fa-<%= h(item["icon"] || "gem") %>"></i></div>
+      <div>
+        <div class="item-name"><%= h(item["name"]) %></div>
+        <div class="item-tag"><%= h(item["tags"]) %></div>
+        <% if item["description"] && !item["description"].empty? %>
+        <div class="item-desc"><%= h(item["description"]) %></div>
+        <% end %>
+      </div>
+    </div>
+    <% end %>
+
+    <h2>In Pack</h2>
+    <% data["inventory"]["pack"].each do |item| %>
+    <div class="item">
+      <div class="item-icon"><i class="fa-solid fa-<%= h(item["icon"] || "gem") %>"></i></div>
+      <div>
+        <div class="item-name"><%= h(item["name"]) %></div>
+        <div class="item-tag"><%= h(item["tags"]) %></div>
+      </div>
+    </div>
+    <% end %>
+  </div>
+
+  <div class="panel" id="panel-quests">
+    <h2>Active Quest</h2>
+    <% aq = data["quests"]["active"] %>
+    <div class="quest">
+      <div class="quest-title"><%= h(aq["name"]) %> <span class="quest-label label-active">active</span></div>
+      <div class="quest-desc"><%= h(aq["description"]) %></div>
+      <% (aq["steps"] || []).each do |step| %>
+      <div class="quest-step <%= step["done"] ? "done" : "pending" %>"><%= h(step["text"]) %></div>
+      <% end %>
+    </div>
+
+    <h2>Side Quests</h2>
+    <% (data["quests"]["side"] || []).each do |sq| %>
+    <div class="quest quest-side">
+      <div class="quest-title"><%= h(sq["name"]) %> <span class="quest-label label-side">side</span></div>
+      <div class="quest-desc"><%= h(sq["description"]) %></div>
+    </div>
+    <% end %>
+
+    <h2>Completed</h2>
+    <% (data["quests"]["completed"] || []).each do |cq| %>
+    <div class="quest quest-complete">
+      <div class="quest-title"><%= h(cq["name"]) %> <span class="quest-label label-complete">complete</span></div>
+      <div class="quest-desc"><%= h(cq["description"]) %></div>
+    </div>
+    <% end %>
+  </div>
+
+  <div class="panel" id="panel-party">
+    <h2>Allies</h2>
+    <% (data["party"]["allies"] || []).each do |ally| %>
+    <div class="ally">
+      <span class="ally-name"><%= h(ally["name"]) %></span>
+      <span class="ally-role"><%= h(ally["role"]) %></span>
+    </div>
+    <% end %>
+
+    <h2>Relationship Style</h2>
+    <p><%= h(data["party"]["relationship_style"]) %></p>
+
+    <h2>Role in Party</h2>
+    <p><%= h(data["party"]["party_role"]) %></p>
+  </div>
+
+  <div class="page-footer">
+    ~<%= data["post_count"] %> posts &middot; <%= h(data["site_url"]) %> &middot; <%= h(data["date_range"]) %> &middot; Generated <%= h(data["generated_date"]) %>
+  </div>
+
+</div>
+
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 config.json
 .discourse-rpg-sheet.json
 *-character-sheet.md
+*-character-sheet.json
 *-character-sheet.html
 *-character-portrait.png

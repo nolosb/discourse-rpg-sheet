@@ -2,6 +2,8 @@
 
 Generate RPG character sheets from Discourse forum activity using [term-llm](https://github.com/juftin/term-llm) and the [Discourse MCP server](https://github.com/discourse/discourse-mcp).
 
+The model gathers forum posts, analyzes patterns, and translates them into a fantasy RPG character sheet complete with stats, abilities, debuffs, quests, and an origin story. Everything is named in RPG language, not workplace language.
+
 ## Setup
 
 ### Prerequisites
@@ -50,37 +52,49 @@ bin/discourse-rpg-sheet USERNAME [SITE_URL] [TIMEFRAME]
 
 If `SITE_URL` is omitted, uses `discourse.default_site` from config.
 
-Interactive by default: after data gathering and analysis, the script uses `ask_user` to let you choose/remix identity, stats, abilities, debuffs, and inventory before generating output.
+### Interaction modes
+
+By default, the model asks you to pick your character's name, family, trade, and temper, then generates everything else automatically.
+
+- `--review` adds a full sheet preview before output, with the option to re-roll sections
+- `--batch` skips all interaction; the model decides everything
+- `--reroll` skips data gathering and reuses the analysis from a previous run
 
 ### Examples
 
 ```bash
-# Interactive (default)
+# Interactive (default): pick identity, auto-generate the rest
 bin/discourse-rpg-sheet USERNAME
+
+# With full review before output
+bin/discourse-rpg-sheet USERNAME --review
+
+# Re-roll: reuse gathered data, pick new identity and regenerate
+bin/discourse-rpg-sheet USERNAME --reroll
+
+# Batch mode: fully automatic, no interaction
+bin/discourse-rpg-sheet USERNAME --batch
 
 # Specify site and timeframe
 bin/discourse-rpg-sheet USERNAME https://your-discourse.com "last year"
 
-# Batch mode: model decides everything
-bin/discourse-rpg-sheet USERNAME --batch
-
 # Custom output directory
 bin/discourse-rpg-sheet USERNAME -o ./sheets
 
-# Override model from CLI
-bin/discourse-rpg-sheet USERNAME --model "different-model-name"
-
 # Public read-only, no user API key
-bin/discourse-rpg-sheet USERNAME https://your-discourse.com "last 30 days" --no-user-api-key
+bin/discourse-rpg-sheet USERNAME --no-user-api-key
 ```
 
 ### Output
 
-Two files in the output directory:
-- `{username}-character-sheet.md`
-- `{username}-character-sheet.html`
+Three files in the output directory:
+- `{username}-analysis.md` — cached analysis data (reused by `--reroll`)
+- `{username}-character-sheet.md` — the character sheet in markdown
+- `{username}-character-sheet.json` — structured character data
 
-The HTML is self-contained (inline CSS/JS) and references an optional portrait at `{username}-character-portrait.png`.
+The script renders HTML automatically from the JSON using an ERB template. The HTML page is written to `{username}-character-sheet.html` and references an optional portrait at `{username}-character-portrait.png`.
+
+A portrait generation prompt is printed at the end of each run.
 
 ## Debugging
 

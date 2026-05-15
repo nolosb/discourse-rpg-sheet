@@ -197,6 +197,21 @@ Analyze the gathered data through these lenses, using concrete examples:
 
 Present a concise analysis summary to the user before proceeding.
 
+After completing the analysis, write the full analysis to
+`{username}-analysis.md` using `write_file`. This file is used for re-rolls
+so include everything: post metadata summary, detailed post excerpts and quotes,
+collaboration patterns, signature moves, strongest contributions, gaps,
+evolution, and the deeper question. Be thorough. This file replaces the entire
+data gathering phase on a re-roll.
+
+---
+
+## Reroll Mode
+
+If the instructions say "reroll mode: on" and provide a path to an existing
+analysis file, SKIP Phases 1 and 2 entirely. Read the analysis file and use
+its contents as your data source. Proceed directly to Phase 3.
+
 ---
 
 ## Phase 3: Collaborative Trait Mapping — INTERACTIVE
@@ -205,27 +220,39 @@ Use the `ask_user` tool. Do not skip this. Do not merely print questions in text
 You MUST receive at least one `ask_user` response before Phase 4. If you have
 not successfully called `ask_user`, you are forbidden from writing output files.
 
-Structure this as exactly 3 rounds of interaction:
+### Round 1: Identity (always)
 
-### Round 1: Identity & Stats
+Use a SINGLE `ask_user` call with exactly 4 questions. The `ask_user` tool has
+hard limits: max 4 questions, max 12 characters per header, 2-4 options per
+question. Plan for these. Do not retry with different layouts.
 
-Present your full proposal for:
+The 4 questions are:
+1. **Name** (header: "Name") — A character name that evokes who they are. Not
+   their real name with "the" in front. Think: "Manuel of the Seam", "Bryce the
+   Bridgewright". Offer 2-3 options.
+2. **Family** (header: "Family") — Where they come from / how they are positioned.
+   Examples: Borderlander, Guildmaster, Wayfinder, Sentinel, Chronicler.
+   Offer 2-3 options.
+3. **Trade** (header: "Trade") — Their craft / building mode.
+   Examples: Artificer, Architect, Forgehand, Scribe, Cartographer.
+   Offer 2-3 options.
+4. **Temper** (header: "Temper") — How they influence others.
+   Examples: Field Bard, Truthsayer, Tactician, Hearthkeeper, Signalfire.
+   Offer 2-3 options.
 
-- **Name**: A character name that evokes who they are. Not their real name with
-  "the" in front. Think: "Manuel of the Seam", "Bryce the Bridgewright".
-  Offer 2-3 options.
-- **Family**: Where they come from / how they are positioned.
-  Examples: Borderlander, Guildmaster, Wayfinder, Sentinel, Chronicler.
-  Offer 2-3 options, each with a one-line reason.
-- **Trade**: Their craft / building mode.
-  Examples: Artificer, Architect, Forgehand, Scribe, Cartographer.
-  Offer 2-3 options, each with a one-line reason.
-- **Temper**: How they influence others.
-  Examples: Field Bard, Truthsayer, Tactician, Hearthkeeper, Signalfire.
-  Offer 2-3 options, each with a one-line reason.
-- **Level** (1-20, based on tenure and impact)
+Option labels MUST be short: just the name (1-2 words). Put the explanation in
+the option description field, not the label.
+Good: label "Artificer", description "Crafts themes and design systems".
+Bad: label "Design Artificer — Crafts themes and design systems with precision".
+
+In each question text, tell the user they can type a custom answer as
+"Name: Description" (e.g., "Forgehand: Builds bridges between systems").
+If the user types just a name, use it and generate a fitting description.
+
+Do NOT ask for feedback on these. Decide them yourself based on the data:
 - **Alignment** (D&D style with a workplace twist, e.g., "Pragmatic Good",
   "Chaotic Builder")
+- **Level** (1-20, based on tenure and impact)
 - **Six stats** on a 1-20 scale with one-line justification each:
   - STR: raw output / delivery volume
   - DEX: versatility / context switching
@@ -234,14 +261,12 @@ Present your full proposal for:
   - WIS: judgment / knowing when and where to act
   - CHA: influence / ability to shift others' thinking
 
-Use `ask_user` to let the user pick identity options and adjust stats.
+### Model-decided sections (no ask_user)
 
-### Round 2: Abilities & Debuffs
+Decide these yourself based on the data. Do NOT ask for user feedback on these.
 
-Present your full proposal for:
-
-- **1 passive ability** and **3-5 active abilities** based on signature patterns.
-  Each ability needs:
+**Abilities** — **1 passive ability** and **3-5 active abilities** based on
+signature patterns. Each ability needs:
   - Name: 1-2 evocative words. NOT workplace language.
   - Type: Passive or Active
   - For active: Range (Melee/Ranged/Ritual/Utility/Bardic), Cooldown
@@ -252,35 +277,42 @@ Present your full proposal for:
     Pick quotes that show the ability in action. One sentence is better than a
     paragraph.
 
-- **2-4 debuffs** based on gaps. Each needs:
+**Debuffs** — **2-4 debuffs** based on gaps. Each needs:
   - Name: Evocative, not clinical
   - Type: persistent (structural, can't self-remove), removable (habitual, can
     be worked on), or environmental (caused by context, not character)
   - Effect: Mechanical description with stat penalties (e.g., "-2 CHA when...")
   - Description: 2-3 sentences. What causes it and how it manifests, in RPG terms.
 
-Use `ask_user` to let the user accept, adjust tone, or rewrite specific entries.
-
-### Round 3: Everything Else & Final Approval
-
-Present your full proposal for:
-
+**Inventory:**
 - **Equipped items** (3): Major tools/assets with RPG-style tags and descriptions.
   Think "The Seam Map (passive, unique)" not "Mental Model of Architecture".
 - **Pack items** (4-6): Smaller artifacts, documents, prototypes
+
+**Quests:**
 - **Active quest** (1): The big thing they are working toward, with progress steps
 - **Side quests** (2-4): Parallel efforts
 - **Completed quests** (2-3): Things they have shipped
+
+**Party:**
 - **Allies** (4-6): People they collaborate with and how
 - **Relationship style**: One sentence
 - **Party role**: One sentence, using RPG party language ("the tank", "the scout",
   "the one who reads the map")
-- **Origin story**: 3-4 sentences, third person, past tense, slightly mythic tone.
-  Use language like "arrived at the territories", "the guild noticed", "started
-  telling stories about what was seen at the seams". Covers: arrival, early work,
-  the moment of noticing something deeper, and current state.
 
-Use `ask_user` for final approval. Once approved, proceed to Phase 4.
+**Origin story**: 3-4 sentences, third person, past tense, slightly mythic tone.
+Use language like "arrived at the territories", "the guild noticed", "started
+telling stories about what was seen at the seams". Covers: arrival, early work,
+the moment of noticing something deeper, and current state.
+
+### Round 2: Review (only in review mode)
+
+Skip this round unless the instructions say "review mode: on".
+
+Present the COMPLETE character sheet proposal (all sections above) in text, then
+use `ask_user` to ask if the user approves or wants to re-roll specific sections.
+If the user asks to re-roll, regenerate those sections and present again. Once
+approved, proceed to Phase 4.
 
 ---
 
@@ -424,6 +456,16 @@ After generating both files, tell the user:
 
 1. The two files that were created and where they are
 2. The HTML page will be generated automatically from the JSON
-3. To add a portrait, they can create pixel art (Might and Magic III style
-   works well) and save it as `{username}-character-portrait.png` in the same
+3. To add a portrait, save it as `{username}-character-portrait.png` in the same
    directory
+
+Then output a portrait generation prompt the user can paste into an image
+generator. The prompt should describe:
+- A pixel art portrait in Might and Magic III / early 90s RPG style
+- The character's class fantasy (family, trade, temper) translated into visual cues
+- Key personality traits as visual details (e.g., a cautious character has guarded
+  posture, a builder has tools)
+- 240x240px, dark background, warm palette matching the character sheet colors
+- Head and shoulders framing, facing slightly left
+
+Keep the prompt to 2-3 sentences. Evocative, not over-specified.

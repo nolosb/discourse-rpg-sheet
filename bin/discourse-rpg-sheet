@@ -75,6 +75,8 @@ options = {
   target_posts: 500,
   detailed_posts: 30,
   interactive: true,
+  review: false,
+  reroll: false,
   generate_user_api_key: true,
   auto_generate_user_api_key: true,
   mcp_scopes: "read",
@@ -98,6 +100,8 @@ parser = OptionParser.new do |o|
   o.on("--detailed-posts N", Integer, "Substantive posts to read in full (default: 30)") { |v| options[:detailed_posts] = v }
   o.on("--batch", "Non-interactive: model decides all trait choices") { options[:interactive] = false }
   o.on("--interactive", "Interactive mode with ask_user (default)") { options[:interactive] = true }
+  o.on("--review", "Add a full sheet review round before generating output") { options[:review] = true }
+  o.on("--reroll", "Skip data gathering, reuse previous analysis file") { options[:reroll] = true }
   o.on("--max-output-tokens N", Integer, "term-llm max output tokens") { |v| options[:max_output_tokens] = v }
   o.on("--keep-temp", "Keep temp config directory for debugging (contains secrets)") { options[:keep_temp] = true }
   o.separator ""
@@ -169,6 +173,11 @@ discourse_op_account = discourse_cfg["op_account"]
 
 slug = username.downcase.gsub(/[^a-z0-9_-]+/, "-").gsub(/^-|-$/, "")
 FileUtils.mkdir_p(options[:output_dir])
+
+if options[:reroll]
+  analysis_path = File.join(options[:output_dir], "#{slug}-analysis.md")
+  abort "Reroll requires an existing analysis file: #{analysis_path}" unless File.exist?(analysis_path)
+end
 
 class SecretError < StandardError; end
 
@@ -376,10 +385,13 @@ begin
     Output directory: #{File.expand_path(options[:output_dir]).inspect}
     Markdown file to write: #{File.expand_path(File.join(options[:output_dir], "#{slug}-character-sheet.md")).inspect}
     JSON file to write: #{File.expand_path(File.join(options[:output_dir], "#{slug}-character-sheet.json")).inspect}
+    Analysis file to write: #{File.expand_path(File.join(options[:output_dir], "#{slug}-analysis.md")).inspect}
 
     If you hit a Discourse MCP rate limit, use the shell tool to run `sleep N` for the requested wait time, then continue.
 
     Interaction mode: #{options[:interactive] ? "interactive. Use ask_user for Phase 3 collaborative trait mapping." : "batch. Do not use ask_user; make the trait choices yourself and proceed to output."}
+    Review mode: #{options[:review] ? "on. After identity picks, present the full sheet for approval before generating output." : "off. After identity picks, proceed directly to output."}
+    Reroll mode: #{options[:reroll] ? "on. Skip Phases 1 and 2. Read the analysis file at #{File.expand_path(File.join(options[:output_dir], "#{slug}-analysis.md")).inspect} and use it as your data source. Proceed directly to Phase 3." : "off. Run all phases normally."}
   QUESTION
 
   cmd = [

@@ -24,41 +24,117 @@ becomes "Golem Pact".
 
 ### Good vs Bad Examples
 
+These illustrate the right register. Do NOT reuse these names verbatim.
+Every character needs unique names drawn from their specific patterns.
+
+**Classes (Family / Trade / Temper):**
+
 | Bad (workplace)              | Good (RPG)                    |
 |------------------------------|-------------------------------|
 | Cross-Team Collaborator      | Borderlander                  |
 | Technical Architect          | Forgehand                     |
 | Direct Communicator          | Truthsayer                    |
+| Operations Lead              | Ironkeeper                    |
+| Frontend Specialist          | Glazier                       |
+| Backend Engineer             | Deepdelver                    |
+| Product Manager              | Pathfinder                    |
+| QA / Testing Lead            | Wardkeeper                    |
+| Data Analyst                 | Augur                         |
+| Community Manager            | Hearthwarden                  |
+| Support Engineer             | Shieldbearer                  |
+| DevOps Engineer              | Bridgewright                  |
+
+**Abilities:**
+
+| Bad (workplace)              | Good (RPG)                    |
+|------------------------------|-------------------------------|
 | Identifies System Gaps       | Seamsight                     |
 | Builds Prototypes            | Prototype Summon              |
 | Reframes Discussions         | Contrast Strike               |
+| Gives Constructive Feedback  | Field Song                    |
+| Writes Detailed Documentation| Lorekeeper's Ink              |
+| Mentors Junior Members       | Kindling Touch                |
+| Automates Repetitive Tasks   | Golem Forge                   |
+| Deep-Dives into Bugs         | Spelunker's Eye               |
+| Builds Stakeholder Consensus | Hearthcall                    |
+| Ships MVPs Quickly           | Swift Strike                  |
+| Thorough Code Reviews        | Sentinel's Gaze               |
+| Escalates Issues Early       | Signal Flare                  |
+| Debugs Production Issues     | Firemender                    |
+| Refactors Legacy Code        | Ruin Reclaimer                |
+| Writes Persuasive Proposals  | Silver Tongue                 |
+| Connects User Feedback to Product | Fieldcraft                |
+
+**Debuffs:**
+
+| Bad (workplace)              | Good (RPG)                    |
+|------------------------------|-------------------------------|
 | Over-Relies on AI Tools      | Golem Pact Dependency         |
 | Communication Style Too Blunt| Untempered Edge               |
 | Works in Isolation           | Workshop Hermit               |
 | High Delivery Load           | Delivery Drain                |
-| Gives Constructive Feedback  | Field Song                    |
+| Perfectionism                | Gilding Fever                 |
+| Scope Creep                  | The Expanding Map             |
+| Context Switching Penalty    | Shattered Focus               |
+| Avoids Conflict              | Peacekeeper's Bind            |
+| Burnout Risk                 | Ember Fade                    |
+| Takes on Too Much            | Atlas Burden                  |
+| Procrastinates on Docs       | Inkwell Dust                  |
+
+**Inventory:**
+
+| Bad (workplace)              | Good (RPG)                    |
+|------------------------------|-------------------------------|
 | Project Management Dashboard | War Table                     |
 | Documentation                | Chronicler's Codex            |
 | Slack/Chat Tool              | Sending Stone                 |
+| Code Review Tool             | Sentinel's Lens               |
+| CI/CD Pipeline               | The Ironworks                 |
+| Testing Framework            | Proving Ground                |
+| Analytics Dashboard          | The Oracle Glass              |
+| Knowledge Base               | The Archive                   |
+| Design System                | Pattern Codex                 |
+
+**Quests:**
+
+| Bad (workplace)              | Good (RPG)                    |
+|------------------------------|-------------------------------|
+| Reduce Tech Debt             | The Rust Purge                |
+| Ship Feature V2              | The Second Forging            |
+| Migrate Database             | The Great Crossing            |
+| Improve Onboarding           | Opening the Gates             |
+| Fix Performance Issues       | Lifting the Fog               |
+| Redesign Navigation          | The Breadcrumb Reformation    |
 
 ### Tone Guidance by Section
 
 - **Names** (Family, Trade, Temper): One or two words max. Evocative, not
   descriptive. Think character classes, not job titles.
-- **Abilities**: Name is 1-2 words, mythic. Description explains the real
-  behavior but through RPG framing. Include mechanical language (cooldowns,
-  costs, range). Include a real quote from their posts as evidence.
+- **Abilities**: Name is 1-2 words, mythic. Description is 2-3 sentences max.
+  Explains the real behavior but through RPG framing. Include mechanical language
+  (cooldowns, costs, range). Include a real quote from their posts as evidence.
+  Pick quotes that show the ability in action, not just on-topic. One sentence
+  is better than a paragraph.
 - **Debuffs**: Name is evocative. Effect uses mechanical language ("-2 CHA",
-  "40% chance of..."). Description explains the real pattern in RPG terms.
+  "40% chance of..."). Description is 2-3 sentences, explains the real pattern
+  in RPG terms.
 - **Inventory**: Items are metaphors for real tools/assets. "The Client Portfolio"
   not "Project List". "Agent Forge" not "AI Coding Tool". Include RPG-style tags
   (heavy, unique, recently acquired, generates resources).
 - **Quests**: Quest names are evocative. "The Breadcrumb Reformation" not
   "Redesign Navigation". Steps can be concrete but the framing is mythic.
-- **Origin Story**: Third person, past tense, slightly mythic. 3-4 sentences.
-  "Arrived at the territories" not "Joined the company".
-- **Stats**: Short descriptions should be character-flavored, not resume-flavored.
+- **Origin Story**: Third person, past tense, slightly mythic. Exactly 3-4
+  sentences. "Arrived at the territories" not "Joined the company".
+- **Stats**: One-line descriptions only. Character-flavored, not resume-flavored.
   "Sustained heavy load without breaking" not "Handles multiple projects".
+
+### Stat Calibration
+
+Do not flatter. Most stats should fall in the 10-16 range. A score of 17+ is
+exceptional and requires strong, specific evidence from the data. Having some
+stats at 10-12 makes the character feel real, not like a performance review
+that inflates everyone. Every person has weaker areas. Show them. A character
+with all stats above 14 is boring and dishonest.
 
 ### The Translation Process
 
@@ -116,91 +192,83 @@ Present a concise analysis summary to the user before proceeding.
 Use the `ask_user` tool. Do not skip this. Do not merely print questions in text.
 You MUST receive at least one `ask_user` response before Phase 4. If you have
 not successfully called `ask_user`, you are forbidden from writing output files.
-Ask focused multiple-choice questions with an `Other` option available via the
-tool. After each answer, incorporate the user's choice and continue.
 
-Keep the interaction compact. Ask 3-5 questions total by grouping choices.
+Structure this as exactly 3 rounds of interaction:
 
-### 3a. Character Identity
+### Round 1: Identity & Stats
 
-Propose 2-3 options each for:
+Present your full proposal for:
 
-- Name: A character name that evokes who they are. Not their real name with "the"
-  in front. Think: "Manuel of the Seam", "Bryce the Bridgewright".
-- Family: Where they come from / how they are positioned.
-  Examples: Borderlander, Guildmaster, Wayfinder, Sentinel, Chronicler
-- Trade: Their craft / building mode.
-  Examples: Artificer, Architect, Forgehand, Scribe, Cartographer
-- Temper: How they influence others.
-  Examples: Field Bard, Truthsayer, Tactician, Hearthkeeper, Signalfire
+- **Name**: A character name that evokes who they are. Not their real name with
+  "the" in front. Think: "Manuel of the Seam", "Bryce the Bridgewright".
+  Offer 2-3 options.
+- **Family**: Where they come from / how they are positioned.
+  Examples: Borderlander, Guildmaster, Wayfinder, Sentinel, Chronicler.
+  Offer 2-3 options, each with a one-line reason.
+- **Trade**: Their craft / building mode.
+  Examples: Artificer, Architect, Forgehand, Scribe, Cartographer.
+  Offer 2-3 options, each with a one-line reason.
+- **Temper**: How they influence others.
+  Examples: Field Bard, Truthsayer, Tactician, Hearthkeeper, Signalfire.
+  Offer 2-3 options, each with a one-line reason.
+- **Level** (1-20, based on tenure and impact)
+- **Alignment** (D&D style with a workplace twist, e.g., "Pragmatic Good",
+  "Chaotic Builder")
+- **Six stats** on a 1-20 scale with one-line justification each:
+  - STR: raw output / delivery volume
+  - DEX: versatility / context switching
+  - CON: endurance / sustained load over time
+  - INT: systems thinking / pattern recognition
+  - WIS: judgment / knowing when and where to act
+  - CHA: influence / ability to shift others' thinking
 
-Each option needs a one-line description explaining why it fits.
+Use `ask_user` to let the user pick identity options and adjust stats.
 
-Use `ask_user` to let the user pick/remix. Also propose Level 1-20 and Alignment
-(D&D style with a workplace twist, e.g., "Pragmatic Good", "Chaotic Builder").
+### Round 2: Abilities & Debuffs
 
-### 3b. Stats
+Present your full proposal for:
 
-Propose six stats on a 1-20 scale, with one-line justification:
+- **1 passive ability** and **3-5 active abilities** based on signature patterns.
+  Each ability needs:
+  - Name: 1-2 evocative words. NOT workplace language.
+  - Type: Passive or Active
+  - For active: Range (Melee/Ranged/Ritual/Utility/Bardic), Cooldown
+    (None/Medium/Long/Days), Cost
+  - Description: 2-3 sentences. What it does, when it works, when it fails.
+    Use RPG framing.
+  - Evidence quote: a real quote from their posts that demonstrates the ability.
+    Pick quotes that show the ability in action. One sentence is better than a
+    paragraph.
 
-- STR: raw output / delivery volume
-- DEX: versatility / context switching
-- CON: endurance / sustained load over time
-- INT: systems thinking / pattern recognition
-- WIS: judgment / knowing when and where to act
-- CHA: influence / ability to shift others' thinking
+- **2-4 debuffs** based on gaps. Each needs:
+  - Name: Evocative, not clinical
+  - Type: persistent (structural, can't self-remove), removable (habitual, can
+    be worked on), or environmental (caused by context, not character)
+  - Effect: Mechanical description with stat penalties (e.g., "-2 CHA when...")
+  - Description: 2-3 sentences. What causes it and how it manifests, in RPG terms.
 
-Use `ask_user` to ask whether to accept, boost influence/CHA, boost systems/INT,
-boost delivery/STR-CON, or rebalance manually.
+Use `ask_user` to let the user accept, adjust tone, or rewrite specific entries.
 
-### 3c. Abilities
+### Round 3: Everything Else & Final Approval
 
-Propose 1 passive and 3-5 active abilities based on the signature patterns found.
-Each ability needs:
+Present your full proposal for:
 
-- Name: 1-2 evocative words. NOT workplace language.
-- Type: Passive or Active
-- For active: Range (Melee/Ranged/Ritual/Utility/Bardic), Cooldown (None/Medium/Long/Days), Cost
-- Description: what it does, when it works, when it fails. Use RPG framing.
-- Evidence quote: a real quote from their posts that demonstrates the ability
-
-Use `ask_user` to let the user accept or choose a tonal direction.
-
-### 3d. Debuffs
-
-Propose 2-4 debuffs based on gaps. Each needs:
-
-- Name: Evocative, not clinical
-- Type: persistent (structural, can't self-remove), removable (habitual, can be
-  worked on), or environmental (caused by context, not character)
-- Effect: Mechanical description with stat penalties (e.g., "-2 CHA when...")
-- Description: What causes it and how it manifests, in RPG terms
-
-Use `ask_user` to let the user accept/soften/sharpen.
-
-### 3e. Inventory, Quests, Party
-
-Propose:
-
-- Equipped items (3): Major tools/assets with RPG-style tags and descriptions.
+- **Equipped items** (3): Major tools/assets with RPG-style tags and descriptions.
   Think "The Seam Map (passive, unique)" not "Mental Model of Architecture".
-- Pack items (4-6): Smaller artifacts, documents, prototypes
-- Active quest (1): The big thing they are working toward, with progress steps
-- Side quests (2-4): Parallel efforts
-- Completed quests (2-3): Things they have shipped
-- Allies (4-6): People they collaborate with and how
-- Relationship style: One sentence
-- Party role: One sentence, using RPG party language ("the tank", "the scout",
+- **Pack items** (4-6): Smaller artifacts, documents, prototypes
+- **Active quest** (1): The big thing they are working toward, with progress steps
+- **Side quests** (2-4): Parallel efforts
+- **Completed quests** (2-3): Things they have shipped
+- **Allies** (4-6): People they collaborate with and how
+- **Relationship style**: One sentence
+- **Party role**: One sentence, using RPG party language ("the tank", "the scout",
   "the one who reads the map")
+- **Origin story**: 3-4 sentences, third person, past tense, slightly mythic tone.
+  Use language like "arrived at the territories", "the guild noticed", "started
+  telling stories about what was seen at the seams". Covers: arrival, early work,
+  the moment of noticing something deeper, and current state.
 
-Use `ask_user` once for final approval before generating files.
-
-### 3f. Origin Story
-
-Write a 3-4 sentence origin story in third person, past tense, slightly mythic
-tone. Use language like "arrived at the territories", "the guild noticed",
-"started telling stories about what was seen at the seams". It should cover:
-arrival, early work, the moment of noticing something deeper, and current state.
+Use `ask_user` for final approval. Once approved, proceed to Phase 4.
 
 ---
 
@@ -898,17 +966,17 @@ fa-book, fa-gavel, fa-wrench, fa-fire, fa-feather, fa-chess-rook, fa-landmark
         <h2>Stats</h2>
 
         <!-- Repeat this block for each stat: STR, DEX, CON, INT, WIS, CHA -->
-        <!-- stat-bar width = (value / 20) * 100 percent -->
         <!-- Use class str/dex/con/int/wis/cha on stat-row-wrap for bar color -->
+        <!-- Calculate bar width: stat value multiplied by 5. E.g. stat 14 = width 70% -->
         <div class="stat-row-wrap str">
           <div class="stat-row" style="width:100%">
             <span class="stat-name">STR</span>
-            <span class="stat-value">[N]</span>
-            <div class="stat-bar-bg"><div class="stat-bar" style="width:[N*5]%"></div></div>
+            <span class="stat-value">14</span>
+            <div class="stat-bar-bg"><div class="stat-bar" style="width:70%"></div></div>
           </div>
-          <div class="stat-desc">[SHORT STAT DESCRIPTION]</div>
+          <div class="stat-desc">Sustained heavy load without breaking</div>
         </div>
-        <!-- ... repeat for DEX, CON, INT, WIS, CHA ... -->
+        <!-- ... repeat for DEX, CON, INT, WIS, CHA with their values ... -->
 
       </div>
     </div>

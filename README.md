@@ -1,6 +1,6 @@
 # discourse-rpg-sheet
 
-Generate RPG character sheets from Discourse forum activity using [term-llm](https://github.com/juftin/term-llm) and the [Discourse MCP server](https://github.com/discourse/discourse-mcp).
+Generate RPG character sheets from Discourse forum activity using [term-llm](https://github.com/samSaffron/term-llm) and the [Discourse MCP server](https://github.com/discourse/discourse-mcp).
 
 The model gathers forum posts, analyzes patterns, and translates them into a fantasy RPG character sheet complete with stats, abilities, debuffs, quests, and an origin story. Everything is named in RPG language, not workplace language.
 
@@ -10,7 +10,7 @@ The model gathers forum posts, analyzes patterns, and translates them into a fan
 
 - Ruby 3.x
 - Node.js / npm (for `npx`)
-- [term-llm](https://github.com/juftin/term-llm)
+- [term-llm](https://github.com/samSaffron/term-llm)
 - An OpenAI-compatible inference endpoint
 - Optional: 1Password CLI (`op`) for secret management
 
